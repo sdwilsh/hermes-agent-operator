@@ -87,6 +87,15 @@ func TestDesiredSpecHash(t *testing.T) {
 			t.Error("expected different hash when podAnnotations change")
 		}
 	})
+
+	t.Run("changes when podLabels change", func(t *testing.T) {
+		ha := minimalHA()
+		h1 := desiredSpecHash(buildStatefulSet(ha))
+		ha.Spec.PodLabels = map[string]string{"example.com/internet-client": testTrue}
+		if desiredSpecHash(buildStatefulSet(ha)) == h1 {
+			t.Error("expected different hash when podLabels change")
+		}
+	})
 }
 
 func TestBuildStatefulSetPodAnnotations(t *testing.T) {
@@ -110,6 +119,78 @@ func TestBuildStatefulSetPodAnnotations(t *testing.T) {
 		}
 		if _, ok := sts.Spec.Template.Annotations[domain+"/config-hash"]; !ok {
 			t.Error("expected config-hash annotation to still be present")
+		}
+	})
+}
+
+func TestBuildStatefulSetPodLabels(t *testing.T) {
+	// selectorMatchesTemplate reports whether every selector label is present
+	// with the same value on the pod template, i.e. whether the StatefulSet can
+	// still adopt its own pods.
+	selectorMatchesTemplate := func(sts *appsv1.StatefulSet) bool {
+		for k, v := range sts.Spec.Selector.MatchLabels {
+			if sts.Spec.Template.Labels[k] != v {
+				return false
+			}
+		}
+		return true
+	}
+
+	t.Run("only operator labels when unset", func(t *testing.T) {
+		ha := minimalHA()
+		sts := buildStatefulSet(ha)
+		if len(sts.Spec.Template.Labels) != 3 {
+			t.Errorf("expected only the three operator labels, got %v", sts.Spec.Template.Labels)
+		}
+	})
+
+	t.Run("user labels are merged in", func(t *testing.T) {
+		ha := minimalHA()
+		ha.Spec.PodLabels = map[string]string{
+			"example.com/internet-client": testTrue,
+			"example.com/traefik-route":   testTrue,
+		}
+		sts := buildStatefulSet(ha)
+		if sts.Spec.Template.Labels["example.com/internet-client"] != testTrue {
+			t.Error("expected example.com/internet-client label to be present")
+		}
+		if sts.Spec.Template.Labels["example.com/traefik-route"] != testTrue {
+			t.Error("expected example.com/traefik-route label to be present")
+		}
+		if sts.Spec.Template.Labels[labelManagedBy] != managedByValue {
+			t.Error("expected the operator labels to still be present")
+		}
+		if !selectorMatchesTemplate(sts) {
+			t.Errorf("selector %v no longer matches template labels %v",
+				sts.Spec.Selector.MatchLabels, sts.Spec.Template.Labels)
+		}
+	})
+
+	t.Run("user labels cannot shadow the selector labels", func(t *testing.T) {
+		ha := minimalHA()
+		ha.Spec.PodLabels = map[string]string{
+			labelName:     "hijacked",
+			labelInstance: "hijacked",
+		}
+		sts := buildStatefulSet(ha)
+		if sts.Spec.Template.Labels[labelName] != appNameValue {
+			t.Errorf("%s = %q, want %q", labelName, sts.Spec.Template.Labels[labelName], appNameValue)
+		}
+		if sts.Spec.Template.Labels[labelInstance] != ha.Name {
+			t.Errorf("%s = %q, want %q", labelInstance, sts.Spec.Template.Labels[labelInstance], ha.Name)
+		}
+		if !selectorMatchesTemplate(sts) {
+			t.Errorf("selector %v no longer matches template labels %v",
+				sts.Spec.Selector.MatchLabels, sts.Spec.Template.Labels)
+		}
+	})
+
+	t.Run("StatefulSet labels are untouched", func(t *testing.T) {
+		ha := minimalHA()
+		ha.Spec.PodLabels = map[string]string{"example.com/internet-client": testTrue}
+		sts := buildStatefulSet(ha)
+		if _, ok := sts.Labels["example.com/internet-client"]; ok {
+			t.Errorf("podLabels must not leak onto the StatefulSet, got %v", sts.Labels)
 		}
 	})
 }

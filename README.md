@@ -93,6 +93,7 @@ Then run the `/hermes-agent-operator` skill to create a custom resource.
 - [`networking.ingress`](#networkingingress)
 - [`suspend`](#suspend)
 - [`podAnnotations`](#podannotations)
+- [`podLabels`](#podlabels)
 
 ### `hermes.config`
 
@@ -643,6 +644,18 @@ podAnnotations:                      # optional
   rotatedAt: "2026-07-06T12:00:00Z"  # any change here triggers a rolling restart
   prometheus.io/scrape: "true"       # also usable for ordinary pod annotations
 ```
+
+### `podLabels`
+
+Add labels to the agent's pod template.  An object that selects pods by label, such as a `NetworkPolicy` or a `PodMonitor`, can then select the agent pod.
+
+```yaml
+podLabels:                           # optional
+  example.com/internet-client: "true"
+  example.com/traefik-route: "true"
+```
+
+The operator-managed `app.kubernetes.io/name`, `app.kubernetes.io/instance` and `app.kubernetes.io/managed-by` labels are applied last and always win.  An entry in `podLabels` cannot shadow one of them, and cannot break the `StatefulSet` pod selector.  The labels go on the **pod template only**; the `StatefulSet` labels do not change.  A change to any key starts a rolling restart.
 
 ## Heartbeat
 
