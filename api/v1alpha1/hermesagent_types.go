@@ -1476,6 +1476,14 @@ type HermesAgentSpec struct {
 	// +optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 
+	// RuntimeClassName sets the RuntimeClass name for the Hermes agent pod.
+	// The named RuntimeClass must already exist in the cluster.  Omit this
+	// field to run the pod on the cluster's default container runtime.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength=253
+	// +optional
+	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
+
 	// SearXNG configures an optional SearXNG sidecar used by the web_search tool.
 	// +optional
 	SearXNG *SearXNG `json:"searxng,omitempty"`
@@ -1667,6 +1675,12 @@ func (h *HermesAgent) GetPodAnnotations() map[string]string {
 // GetPodLabels returns the custom pod template labels, if any.
 func (h *HermesAgent) GetPodLabels() map[string]string {
 	return h.Spec.PodLabels
+}
+
+// GetRuntimeClassName returns the RuntimeClass name for the agent pod.  It
+// returns nil when the field is unset.
+func (h *HermesAgent) GetRuntimeClassName() *string {
+	return h.Spec.RuntimeClassName
 }
 
 func (h *HermesAgent) GetSearXNG() *SearXNG {

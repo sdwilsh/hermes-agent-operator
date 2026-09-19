@@ -96,6 +96,15 @@ func TestDesiredSpecHash(t *testing.T) {
 			t.Error("expected different hash when podLabels change")
 		}
 	})
+
+	t.Run("changes when runtimeClassName changes", func(t *testing.T) {
+		ha := minimalHA()
+		h1 := desiredSpecHash(buildStatefulSet(ha))
+		ha.Spec.RuntimeClassName = ptrString("kata-qemu")
+		if desiredSpecHash(buildStatefulSet(ha)) == h1 {
+			t.Error("expected different hash when runtimeClassName changes")
+		}
+	})
 }
 
 func TestBuildStatefulSetPodAnnotations(t *testing.T) {
@@ -191,6 +200,29 @@ func TestBuildStatefulSetPodLabels(t *testing.T) {
 		sts := buildStatefulSet(ha)
 		if _, ok := sts.Labels["example.com/internet-client"]; ok {
 			t.Errorf("podLabels must not leak onto the StatefulSet, got %v", sts.Labels)
+		}
+	})
+}
+
+func TestBuildStatefulSetRuntimeClassName(t *testing.T) {
+	t.Run("unset leaves the pod on the cluster default runtime", func(t *testing.T) {
+		ha := minimalHA()
+		sts := buildStatefulSet(ha)
+		if sts.Spec.Template.Spec.RuntimeClassName != nil {
+			t.Errorf("expected nil runtimeClassName, got %q", *sts.Spec.Template.Spec.RuntimeClassName)
+		}
+	})
+
+	t.Run("set is passed through to the pod spec", func(t *testing.T) {
+		ha := minimalHA()
+		ha.Spec.RuntimeClassName = ptrString("kata-qemu-runtime-rs")
+		sts := buildStatefulSet(ha)
+		got := sts.Spec.Template.Spec.RuntimeClassName
+		if got == nil {
+			t.Fatal("expected runtimeClassName to be set")
+		}
+		if *got != "kata-qemu-runtime-rs" {
+			t.Errorf("runtimeClassName = %q, want %q", *got, "kata-qemu-runtime-rs")
 		}
 	})
 }

@@ -94,6 +94,7 @@ Then run the `/hermes-agent-operator` skill to create a custom resource.
 - [`suspend`](#suspend)
 - [`podAnnotations`](#podannotations)
 - [`podLabels`](#podlabels)
+- [`runtimeClassName`](#runtimeclassname)
 
 ### `hermes.config`
 
@@ -656,6 +657,16 @@ podLabels:                           # optional
 ```
 
 The operator-managed `app.kubernetes.io/name`, `app.kubernetes.io/instance` and `app.kubernetes.io/managed-by` labels are applied last and always win.  An entry in `podLabels` cannot shadow one of them, and cannot break the `StatefulSet` pod selector.  The labels go on the **pod template only**; the `StatefulSet` labels do not change.  A change to any key starts a rolling restart.
+
+### `runtimeClassName`
+
+Run the agent `Pod` under a named [`RuntimeClass`](https://kubernetes.io/docs/concepts/containers/runtime-class/).  This replaces the cluster's default container runtime for this `Pod`.  The agent executes model-authored shell commands, so a sandboxed runtime such as gVisor or Kata Containers is a good fit for it.
+
+```yaml
+runtimeClassName: kata-qemu          # optional; omit to use the cluster default runtime
+```
+
+The `RuntimeClass` must already exist in the cluster.  The operator does not create it.  A change to this value starts a rolling restart of the `StatefulSet`'s pods.
 
 ## Heartbeat
 

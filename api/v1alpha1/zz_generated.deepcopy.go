@@ -358,6 +358,11 @@ func (in *HermesAgentSpec) DeepCopyInto(out *HermesAgentSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.RuntimeClassName != nil {
+		in, out := &in.RuntimeClassName, &out.RuntimeClassName
+		*out = new(string)
+		**out = **in
+	}
 	if in.SearXNG != nil {
 		in, out := &in.SearXNG, &out.SearXNG
 		*out = new(SearXNG)

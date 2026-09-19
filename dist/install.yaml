@@ -5122,6 +5122,14 @@ spec:
                   `StatefulSet` pod selector.  A change to any key starts a rolling
                   restart of the pods.
                 type: object
+              runtimeClassName:
+                description: |-
+                  RuntimeClassName sets the RuntimeClass name for the Hermes agent pod.
+                  The named RuntimeClass must already exist in the cluster.  Omit this
+                  field to run the pod on the cluster's default container runtime.
+                maxLength: 253
+                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                type: string
               searxng:
                 description: SearXNG configures an optional SearXNG sidecar used by
                   the web_search tool.
