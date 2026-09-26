@@ -247,7 +247,7 @@ func buildStatefulSet(ha *agentsv1alpha1.HermesAgent) *appsv1.StatefulSet {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: resourceLabels(ha),
+					Labels: podTemplateLabels(ha),
 					Annotations: map[string]string{
 						domain + "/config-hash": configHash,
 					},

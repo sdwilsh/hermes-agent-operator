@@ -1467,6 +1467,15 @@ type HermesAgentSpec struct {
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
+	// PodLabels adds labels to the Hermes agent pod template.  The
+	// operator-managed `app.kubernetes.io/name`, `app.kubernetes.io/instance`
+	// and `app.kubernetes.io/managed-by` labels are applied last and always
+	// win.  An entry here cannot shadow one of them, and cannot break the
+	// `StatefulSet` pod selector.  A change to any key starts a rolling
+	// restart of the pods.
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
+
 	// SearXNG configures an optional SearXNG sidecar used by the web_search tool.
 	// +optional
 	SearXNG *SearXNG `json:"searxng,omitempty"`
@@ -1653,6 +1662,11 @@ func (h *HermesAgent) GetExtraVolumeMounts() []corev1.VolumeMount {
 // GetPodAnnotations returns the custom pod template annotations, if any.
 func (h *HermesAgent) GetPodAnnotations() map[string]string {
 	return h.Spec.PodAnnotations
+}
+
+// GetPodLabels returns the custom pod template labels, if any.
+func (h *HermesAgent) GetPodLabels() map[string]string {
+	return h.Spec.PodLabels
 }
 
 func (h *HermesAgent) GetSearXNG() *SearXNG {
